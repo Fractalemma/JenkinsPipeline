@@ -1,0 +1,25 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Terraform variable files (often contain sensitive data)
+*.tfvars
+*.tfvars.json
+
+# Terraform directories and files
+.terraform/
+.terraform.lock.hcl
+*tfplan*
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# IDE files
+.vscode/
+
+# SSH keys and certificates
+*.pem
+*.key
