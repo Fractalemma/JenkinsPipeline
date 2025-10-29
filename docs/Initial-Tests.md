@@ -105,3 +105,20 @@ done
 
 [[ "$STATUS" == "Success" ]] || { echo "Deploy failed: $STATUS"; exit 1; }
 ```
+
+Alternatively you can test it with your local repo (from your terminal):
+
+- Make sure you have the AWS CLI configured and the credentials you are using have the right permissions
+- The first time you will need to install packages:
+
+  ```shell
+    npm install
+  ```
+
+- Build the Vite app:
+  
+  ```shell
+    npm run build
+  ```
+
+- Execute the script manual-test-pipeline.ps1 from your terminal (windows powershell)
