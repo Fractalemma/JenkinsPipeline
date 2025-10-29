@@ -2,9 +2,7 @@ variable "region" {}
 variable "aws_profile" {}
 variable "project_name" {}
 
-variable "bucket_name" {
-  default = "jenkins-pipeline-emmanuel-engineering-com"
-}
+variable "bucket_name" {}
 
 variable "vpc_cidr" {
   # 10.123.0.0 - 10.123.255.255 (65536 IPs)
@@ -32,6 +30,4 @@ variable "jenkins_allowed_http_cidrs" {}
 variable "sub_domain" {
   default = "jenkins-pipeline"
 }
-variable "hosted_zone_name" {
-  default = "emmanuelengineering.com"
-}
+variable "hosted_zone_name" {}
