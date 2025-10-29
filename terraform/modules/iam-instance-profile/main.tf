@@ -4,7 +4,7 @@
 
 # IAM Role for Jenkins EC2 instances
 resource "aws_iam_role" "jenkins_ec2_role" {
-  name               = "${var.module_prefix}-jenkins-ec2-role"
+  name = "${var.module_prefix}-jenkins-ec2-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -38,21 +38,53 @@ resource "aws_iam_policy" "jenkins_ec2_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # ---- Allow SendCommand on SSM documents (no restriction needed)
+      # SSM Documents are pre-defined scripts/commands that define WHAT to execute
+      # Examples: AWS-RunShellScript, AWS-UpdateSSMAgent, AWS-ConfigureAWSPackage
+      # These are AWS-managed templates that contain the actual commands to run
+      # Permission on documents is needed to "use" the script template
       {
         Effect = "Allow"
         Action = [
           "ssm:SendCommand",
-          "ssm:GetCommandInvocation",
-          "ssm:DescribeInstanceInformation",
-          "ssm:ListCommandInvocations"
+          "ssm:CancelCommand"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:ssm:*::document/AWS-*",        # AWS-managed documents (like AWS-RunShellScript)
+          "arn:aws:ssm:*:*:document/*"            # Custom documents (if any)
+        ]
+      },
+
+      # ---- Restrict SendCommand to tagged instances only
+      # EC2 instances are the targets WHERE the document/script will be executed
+      # This permission controls which specific EC2 instances can receive commands
+      # We restrict this to only instances tagged with Role=App for security
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:SendCommand"
+        ]
+        Resource = "arn:aws:ec2:*:*:instance/*"   # Target EC2 instances
         Condition = {
           StringEquals = {
             "ssm:resourceTag/${var.app_ec2_tag_key}" = var.app_ec2_tag_value
           }
         }
       },
+
+      # ---- Read-only SSM queries (no restriction, needed for Jenkins CLI to query status)
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:ListCommandInvocations",
+          "ssm:ListCommands",
+          "ssm:GetCommandInvocation",
+          "ssm:DescribeInstanceInformation"
+        ]
+        Resource = "*"
+      },
+
+      # ---- S3 read/write for artifacts
       {
         Effect = "Allow"
         Action = [
@@ -97,7 +129,7 @@ resource "aws_iam_instance_profile" "jenkins_ec2_profile" {
 
 # IAM Role for App EC2 instances
 resource "aws_iam_role" "app_ec2_role" {
-  name               = "${var.module_prefix}-app-ec2-role"
+  name = "${var.module_prefix}-app-ec2-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
