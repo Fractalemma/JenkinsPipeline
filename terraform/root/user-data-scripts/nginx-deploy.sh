@@ -21,10 +21,36 @@ fi
 
 # Atomic deploy structure
 mkdir -p /var/www/releases /var/www/shared/log /var/www/tmp
-# symlink target
-if [[ ! -e /var/www/current ]]; then
-  ln -s /var/www/releases/initial /var/www/current || true
-fi
+
+# Create initial release directory with a default index.html
+mkdir -p /var/www/releases/initial
+cat >/var/www/releases/initial/index.html <<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome - Deployment Ready</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .status { color: #28a745; font-size: 24px; margin-bottom: 20px; }
+        .info { color: #6c757d; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status">✅ Server Ready for Deployment</div>
+        <div class="info">
+            <p>This is the default page. Your application will replace this content when deployed.</p>
+            <p>Server: <code>$(hostname)</code></p>
+            <p>Timestamp: <code>$(date)</code></p>
+        </div>
+    </div>
+</body>
+</html>
+HTML
+
+# Create the current symlink pointing to initial release
+ln -sfn /var/www/releases/initial /var/www/current
 chown -R nginx:nginx /var/www
 
 # Nginx site
@@ -47,6 +73,9 @@ server {
 }
 NGINX
 nginx -t && systemctl reload nginx
+
+# Create deploy directory and script
+mkdir -p /opt/deploy
 
 # Deploy helper script (called via SSM)
 cat >/opt/deploy/pull_and_switch.sh <<'DEPLOY'

@@ -32,7 +32,7 @@ resource "aws_lb_target_group" "alb_target_group" {
     timeout             = 5
     matcher             = 200
     healthy_threshold   = 2
-    unhealthy_threshold = 3
+    unhealthy_threshold = 5
     port                = "traffic-port"
     protocol            = "HTTP"
   }

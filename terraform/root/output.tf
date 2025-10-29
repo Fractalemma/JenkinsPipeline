@@ -5,3 +5,7 @@ output "project-url" {
 output "jenkins-server" {
   value = "http://${module.jenkins-ec2.public_ip}"
 }
+
+output "s3-bucket-name" {
+  value = var.bucket_name
+}

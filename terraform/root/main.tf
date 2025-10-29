@@ -70,5 +70,5 @@ module "asg" {
   ami_id                        = data.aws_ami.amazon_linux.id
   asg_health_check_grace_period = 300
   iam_instance_profile          = module.instance-profiles.app_ec2_instance_profile_arn
-  user_data                     = filebase64("${path.module}/user-data-scripts/simple-apache.sh")
+  user_data                     = filebase64("${path.module}/user-data-scripts/nginx-deploy.sh")
 }
