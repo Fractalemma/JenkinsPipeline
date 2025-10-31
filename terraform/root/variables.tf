@@ -31,3 +31,6 @@ variable "sub_domain" {
   default = "jenkins-pipeline"
 }
 variable "hosted_zone_name" {}
+
+variable "instance_role_tag_key" {}
+variable "instance_role_tag_value" {}

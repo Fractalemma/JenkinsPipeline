@@ -29,13 +29,11 @@ variable "tg_arn" {}
 variable "instance_role_tag_key" {
   description = "Tag key to identify the role of instances created by this ASG"
   type        = string
-  default     = "Role"
 }
 
 variable "instance_role_tag_value" {
   description = "Tag value to identify the role of instances created by this ASG"
   type        = string
-  default     = "App"
 }
 
 variable "environment" {

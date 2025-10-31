@@ -48,7 +48,12 @@ module "jenkins-ec2" {
   sg_id                = module.security-group.pipeline_agent_sg_id
   ami_id               = data.aws_ami.amazon_linux.id
   iam_instance_profile = module.instance-profiles.jenkins_ec2_instance_profile_name
-  // user_data                     = file("${path.module}/user-data-scripts/simple-apache.sh")
+  user_data = templatefile("${path.module}/user-data-scripts/jenkins-user-data.sh", {
+    region        = var.region
+    bucket_name   = var.bucket_name
+    app_tag_key   = var.instance_role_tag_key
+    app_tag_value = var.instance_role_tag_value
+  })
 }
 
 module "alb" {
@@ -70,5 +75,7 @@ module "asg" {
   ami_id                        = data.aws_ami.amazon_linux.id
   asg_health_check_grace_period = 300
   iam_instance_profile          = module.instance-profiles.app_ec2_instance_profile_arn
+  instance_role_tag_key         = var.instance_role_tag_key
+  instance_role_tag_value       = var.instance_role_tag_value
   user_data                     = filebase64("${path.module}/user-data-scripts/nginx-deploy.sh")
 }

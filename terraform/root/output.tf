@@ -3,7 +3,7 @@ output "project-url" {
 }
 
 output "jenkins-server" {
-  value = "http://${module.jenkins-ec2.public_ip}"
+  value = "http://${module.jenkins-ec2.public_ip}:8080"
 }
 
 output "s3-bucket-name" {
