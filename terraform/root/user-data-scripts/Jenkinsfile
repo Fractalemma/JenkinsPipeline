@@ -1,0 +1,139 @@
+pipeline {
+    agent any
+    
+    environment {
+        REGION = 'us-east-1'
+        BUCKET = 'jenkins-pipeline-emmanuel-engineering-com'
+        KEY_PREFIX = 'myapp/releases'
+        APP_TAG_KEY = 'Role'
+        APP_TAG_VAL = 'App'
+    }
+    
+    stages {
+        stage('Setup Node.js') {
+            steps {
+                script {
+                    sh '''
+                        export NVM_DIR="$HOME/.nvm"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        nvm use 18
+                        echo "Node version: $(node --version)"
+                        echo "NPM version: $(npm --version)"
+                    '''
+                }
+            }
+        }
+        
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                dir('my-vite-app') {
+                    sh '''
+                        export NVM_DIR="$HOME/.nvm"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        nvm use 18
+                        npm install
+                    '''
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                dir('my-vite-app') {
+                    sh '''
+                        export NVM_DIR="$HOME/.nvm"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        nvm use 18
+                        npm run build
+                    '''
+                }
+            }
+        }
+        
+        stage('Package Artifact') {
+            steps {
+                script {
+                    def timestamp = new Date().format("yyyy-MM-dd'T'HH-mm-ss")
+                    env.RELEASE_NAME = "${timestamp}_${env.BUILD_NUMBER}"
+                    env.S3_KEY = "${env.KEY_PREFIX}/${env.RELEASE_NAME}.zip"
+                    
+                    dir('my-vite-app') {
+                        sh "cd dist && zip -r ../artifact.zip ."
+                    }
+                }
+            }
+        }
+        
+        stage('Upload to S3') {
+            steps {
+                script {
+                    sh """
+                        aws s3 cp my-vite-app/artifact.zip s3://${env.BUCKET}/${env.S3_KEY} --region ${env.REGION}
+                        echo "Uploaded to s3://${env.BUCKET}/${env.S3_KEY}"
+                    """
+                }
+            }
+        }
+        
+        stage('Deploy via SSM') {
+            steps {
+                script {
+                    sh """
+                        CMD_ID=\$(aws ssm send-command \\
+                            --region ${env.REGION} \\
+                            --document-name "AWS-RunShellScript" \\
+                            --targets "Key=tag:${env.APP_TAG_KEY},Values=${env.APP_TAG_VAL}" \\
+                            --comment "Jenkins deploy ${env.RELEASE_NAME}" \\
+                            --parameters commands="sudo /opt/deploy/pull_and_switch.sh ${env.BUCKET} ${env.S3_KEY}" \\
+                            --query "Command.CommandId" --output text)
+                        
+                        echo "SSM Command ID: \$CMD_ID"
+                        
+                        # Wait for completion
+                        STATUS="InProgress"
+                        ATTEMPTS=0
+                        MAX_ATTEMPTS=120
+                        
+                        while [ "\$STATUS" = "InProgress" ] && [ \$ATTEMPTS -le \$MAX_ATTEMPTS ]; do
+                            sleep 5
+                            STATUS=\$(aws ssm list-command-invocations --region ${env.REGION} \\
+                                --command-id \$CMD_ID --details \\
+                                --query "CommandInvocations[0].Status" --output text 2>/dev/null || echo "InProgress")
+                            echo "SSM Status: \$STATUS (attempt \$ATTEMPTS/\$MAX_ATTEMPTS)"
+                            ATTEMPTS=\$((ATTEMPTS + 1))
+                        done
+                        
+                        if [ "\$STATUS" != "Success" ]; then
+                            echo "Deployment failed with status: \$STATUS"
+                            aws ssm list-command-invocations --region ${env.REGION} \\
+                                --command-id \$CMD_ID --details \\
+                                --query "CommandInvocations[0].CommandPlugins[0].Output" --output text
+                            exit 1
+                        fi
+                        
+                        echo "Deployment completed successfully!"
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+            echo "Application deployed: ${env.RELEASE_NAME}"
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
