@@ -1,5 +1,6 @@
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
+import pipelineDiagram from './assets/jenkins-pipeline-diagram.svg'
 import './App.css'
 
 function App() {
@@ -24,6 +25,14 @@ function App() {
           <li>Application is served by Nginx</li>
           <li>Automated builds and deployments on push</li>
         </ul>
+      </div>
+      <div className="pipeline-diagram" style={{ width: '100%', maxWidth: '1400px', margin: '2rem auto' }}>
+        <h2>Jenkins Pipeline Architecture Diagram</h2>
+        <img 
+          src={pipelineDiagram} 
+          alt="Jenkins Pipeline Diagram" 
+          style={{ width: '100%', height: 'auto', border: '1px solid #FFF', borderRadius: '8px', padding: '2rem', backgroundColor: '#121212' }}
+        />
       </div>
     </>
   )

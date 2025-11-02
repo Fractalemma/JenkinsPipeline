@@ -23,3 +23,6 @@ override.tf.json
 # SSH keys and certificates
 *.pem
 *.key
+
+# Priv Jenkins file
+Jenkinsfile.priv
