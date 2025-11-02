@@ -264,7 +264,7 @@ This is where you define your pipeline script.
 
 Copy the entire contents of the `Jenkinsfile` into the script text area.
 
-**Location of Jenkinsfile**: `terraform/root/user-data-scripts/Jenkinsfile`
+**Location of Jenkinsfile**: `./Jenkinsfile`
 
 The script should start with:
 
