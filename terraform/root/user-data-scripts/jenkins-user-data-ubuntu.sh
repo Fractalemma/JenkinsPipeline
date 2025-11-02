@@ -14,29 +14,6 @@ java -version
 # Install Git
 apt-get install -y git
 
-# Install Docker (for potential future use)
-apt-get install -y ca-certificates curl gnupg lsb-release
-
-# Add Docker's official GPG key
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
-
-# Set up Docker repository
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-apt-get update
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# Start and enable Docker
-systemctl enable docker
-systemctl start docker
-
-# Add ubuntu user to docker group
-usermod -aG docker ubuntu
-
 # Install Jenkins
 # Add Jenkins repository key
 curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | tee \
@@ -55,37 +32,8 @@ apt-get install -y jenkins
 systemctl enable jenkins
 systemctl start jenkins
 
-# Wait for Jenkins to start and create user
+# Wait for Jenkins to start
 sleep 30
-
-# Install Node.js for Jenkins user
-# Install NVM for jenkins user
-su - jenkins -s /bin/bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash'
-
-# Source nvm and install Node.js 18 for jenkins user
-su - jenkins -s /bin/bash -c '
-export NVM_DIR="/var/lib/jenkins/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install 18
-nvm use 18
-nvm alias default 18
-'
-
-# Create a script to ensure Node.js is available in Jenkins PATH
-cat > /var/lib/jenkins/.profile << 'EOF'
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-export PATH="$NVM_DIR/versions/node/$(nvm current)/bin:$PATH"
-EOF
-
-# Also add to .bashrc for jenkins user
-cat >> /var/lib/jenkins/.bashrc << 'EOF'
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-export PATH="$NVM_DIR/versions/node/$(nvm current)/bin:$PATH"
-EOF
 
 # Install AWS CLI v2
 curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"

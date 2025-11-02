@@ -116,18 +116,30 @@ Search for and select the following plugins:
 
 ## Configure Jenkins System Settings
 
-### 1. Configure Global Tool Configuration (Optional)
+### 1. Configure Node.js Tool (Required)
 
-If you want to configure Node.js globally:
+Our pipeline uses the NodeJS plugin with the `tools` directive. The plugin will automatically download and manage Node.js.
 
 1. Go to **Manage Jenkins** > **Global Tool Configuration**
-2. Scroll to **NodeJS** section
+2. Scroll to the **NodeJS** section
 3. Click **Add NodeJS**
-   - **Name**: `Node 18`
-   - **Version**: Select `18.x`
-   - Click **Save**
+   - **Name**: `NodeJS 20` (this exact name must match the Jenkinsfile)
+   - **Install automatically**: ✅ Check this box
+   - **Version**: Select `NodeJS 20.x` from the dropdown (or the latest 20.x LTS version)
+   - Leave other options as default
+4. Click **Save**
 
-*Note: Our pipeline uses NVM installed in the user-data script, so this is optional.*
+**Important**: The name `NodeJS 20` must match exactly what's in your Jenkinsfile's `tools` section:
+
+```groovy
+tools {
+    nodejs 'NodeJS 20'
+}
+```
+
+**Note**: 
+- The Jenkins plugin will download and cache Node.js automatically on the first build. No manual Node.js installation is required on the EC2 instance.
+- We use Node.js 20 to meet Vite's requirement of Node.js 20.19+ or 22.12+.
 
 ### 2. Configure System Settings
 
@@ -455,24 +467,30 @@ java -version  # Should be Java 17
 4. Click on a delivery to see the request and response
 5. Check for errors (should be `200 OK`)
 
-### Pipeline Fails at "Setup Node.js" Stage
+### Pipeline Fails at "Verify Node.js" Stage
 
-**Issue**: NVM or Node.js not found
+**Issue**: Node.js or npm not found in PATH
 
 **Solution**:
-```bash
-# SSH into Jenkins EC2
-# Check if NVM is installed for jenkins user
-sudo su - jenkins
-nvm --version
-node --version
 
-# If not installed, reinstall:
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install 18
-```
+1. **Check if NodeJS tool is configured in Jenkins**:
+   - Go to **Manage Jenkins** > **Global Tool Configuration**
+   - Verify **NodeJS 20** is configured with auto-install enabled
+   - Ensure the name matches exactly what's in your Jenkinsfile
+
+2. **Check Jenkins Plugin Manager**:
+   - Go to **Manage Jenkins** > **Plugins**
+   - Ensure **NodeJS Plugin** is installed
+
+3. **Check build console output** for Node.js download messages:
+   - First build should show "Unpacking nodejs..."
+   - If it fails to download, check internet connectivity from Jenkins EC2
+
+4. **Restart Jenkins** after configuration changes:
+
+   ```bash
+   sudo systemctl restart jenkins
+   ```
 
 ### Pipeline Fails at "Deploy via SSM" Stage
 
