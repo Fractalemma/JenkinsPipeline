@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
@@ -17,21 +15,19 @@ function App() {
         </a>
       </div>
       <h1>Vite + React</h1>
-      <h4>By Emmanuel Romero</h4>
+      <h3>By Emmanuel Romero</h3>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-        <p>
-          Hello, this is my Vite React application deployed using a Jenkins CI/CD pipeline!
-        </p>
+        <h4>Tech stack</h4>
+        <ul>
+          <li>Vite</li>
+          <li>React</li>
+          <li>TypeScript</li>
+          <li>Jenkins</li>
+          <li>AWS</li>
+          <li>Terraform</li>
+          <li>Nginx</li>
+        </ul>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
