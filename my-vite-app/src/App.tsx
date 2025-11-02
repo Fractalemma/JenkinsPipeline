@@ -17,15 +17,12 @@ function App() {
       <h1>Vite + React</h1>
       <h3>By Emmanuel Romero</h3>
       <div className="card">
-        <h4>Tech stack</h4>
+        <h4>Pipeline features</h4>
         <ul>
-          <li>Vite</li>
-          <li>React</li>
-          <li>TypeScript</li>
-          <li>Jenkins</li>
-          <li>AWS</li>
-          <li>Terraform</li>
-          <li>Nginx</li>
+          <li>AWS Infra is provisioned via Terraform</li>
+          <li>CI/CD pipeline is managed by Jenkins</li>
+          <li>Application is served by Nginx</li>
+          <li>Automated builds and deployments on push</li>
         </ul>
       </div>
     </>
