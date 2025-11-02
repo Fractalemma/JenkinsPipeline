@@ -48,6 +48,7 @@ module "jenkins-ec2" {
   sg_id                = module.security-group.pipeline_agent_sg_id
   ami_id               = data.aws_ami.ubuntu_2204.id
   iam_instance_profile = module.instance-profiles.jenkins_ec2_instance_profile_name
+  instance_type        = "t3.small" # Jenkins sometimes uses more than 1GB of RAM (during builds)
   user_data            = filebase64("${path.module}/user-data-scripts/jenkins-user-data-ubuntu.sh")
 }
 
