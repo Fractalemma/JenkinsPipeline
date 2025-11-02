@@ -31,7 +31,7 @@ function App() {
         <img 
           src={pipelineDiagram} 
           alt="Jenkins Pipeline Diagram" 
-          style={{ width: '100%', height: 'auto', border: '1px solid #FFF', borderRadius: '8px', padding: '2rem', backgroundColor: '#121212' }}
+          style={{ width: '100%', height: 'auto', border: '1px solid #FFF', borderRadius: '9px', padding: '2rem', backgroundColor: '#121212' }}
         />
       </div>
     </>
