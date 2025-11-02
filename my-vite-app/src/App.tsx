@@ -16,7 +16,7 @@ function App() {
         </a>
       </div>
       <h1>Vite + React</h1>
-      <h3>By Emmanuel Romero</h3>
+      <h3>By <a href="https://www.linkedin.com/in/jose-emmanuel-romero-maldonado-automation">Emmanuel Romero</a></h3>
       <div className="card">
         <h4>Pipeline features</h4>
         <ul>
