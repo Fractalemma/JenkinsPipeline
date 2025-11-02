@@ -1,17 +1,25 @@
+// Jenkins Pipeline for Vite Application Deployment
+// 
+// BEFORE USING THIS PIPELINE:
+// 1. Update the GitHub repository URL in the 'Checkout' stage (line ~31)
+// 2. Update the environment variables below with your AWS configuration (lines ~9-14)
+//    - Get values from: terraform output (in terraform/root directory)
+//    - See Jenkins-Setup-Guide.md for detailed instructions
+//
 pipeline {
     agent any
     
     // Automatically adds node and npm to PATH for all stages
     tools {
-        nodejs 'NodeJS 22.12'
+        nodejs 'NodeJS 22.2.0'
     }
     
     environment {
-        REGION = 'us-east-1'
-        BUCKET = 'jenkins-pipeline-emmanuel-engineering-com'
-        KEY_PREFIX = 'myapp/releases'
-        APP_TAG_KEY = 'Role'
-        APP_TAG_VAL = 'App'
+        REGION = 'us-east-1'                    // TODO: Set your AWS region
+        BUCKET = 'YOUR-S3-BUCKET-NAME'          // TODO: Get from: terraform output s3-bucket-name
+        KEY_PREFIX = 'myapp/releases'           // S3 prefix for artifacts (customize if needed)
+        APP_TAG_KEY = 'Role'                    // TODO: EC2 instance tag key (check your Terraform config)
+        APP_TAG_VAL = 'App'                     // TODO: EC2 instance tag value (check your Terraform config)
     }
     
     stages {
@@ -28,6 +36,7 @@ pipeline {
         
         stage('Checkout') {
             steps {
+                // TODO: Update with your GitHub repository URL
                 git branch: 'main',
                     url: 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
             }

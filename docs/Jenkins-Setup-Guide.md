@@ -7,11 +7,10 @@ This guide provides step-by-step instructions for setting up Jenkins on Ubuntu 2
 1. [Initial Jenkins Setup](#initial-jenkins-setup)
 2. [Install Required Plugins](#install-required-plugins)
 3. [Configure Jenkins System Settings](#configure-jenkins-system-settings)
-4. [Create GitHub Personal Access Token](#create-github-personal-access-token)
-5. [Create the Pipeline Job](#create-the-pipeline-job)
-6. [Configure GitHub Webhook](#configure-github-webhook)
-7. [Test the Pipeline](#test-the-pipeline)
-8. [Troubleshooting](#troubleshooting)
+4. [Create the Pipeline Job](#create-the-pipeline-job)
+5. [Configure GitHub Webhook](#configure-github-webhook)
+6. [Test the Pipeline](#test-the-pipeline)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -35,15 +34,15 @@ You can get the public IP from:
 
 Jenkins will prompt you for an initial admin password.
 
-**To retrieve the password:**
+### To retrieve the password
 
-Option A - Via SSM Session:
+#### Option A - Via SSM Session
 
 ```bash
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 
-Option B - Via helper script:
+#### Option B - Via helper script
 
 ```bash
 /opt/jenkins-scripts/jenkins-status.sh
@@ -55,23 +54,23 @@ Copy the password and paste it into the Jenkins web interface.
 
 When prompted "Customize Jenkins":
 
-- **Select**: "Install suggested plugins"
+- Select: "Install suggested plugins"
 - Wait for the plugins to install (this may take 3-5 minutes)
 
 ### 4. Create First Admin User
 
 Fill in the form to create your admin user:
 
-- **Username**: Choose a username (e.g., `admin`)
-- **Password**: Choose a strong password
-- **Full name**: Your name
-- **Email**: Your email address
+- Username: Choose a username (e.g., `admin`)
+- Password: Choose a strong password
+- Full name: Your name
+- Email: Your email address
 
 Click **Save and Continue**.
 
 ### 5. Instance Configuration
 
-- **Jenkins URL**: Should be auto-filled as `http://<PUBLIC_IP>:8080/`
+- Jenkins URL: Should be auto-filled as `http://<PUBLIC_IP>:8080/`
 - Verify it's correct and click **Save and Finish**
 - Click **Start using Jenkins**
 
@@ -93,17 +92,16 @@ Search for and select the following plugins:
 
 #### Essential Plugins
 
-- **Git plugin** (usually already installed)
-- **GitHub plugin**
-- **GitHub Branch Source plugin**
-- **Pipeline: AWS Steps** (for AWS CLI operations)
-- **Pipeline** (usually already installed)
-- **Pipeline: Stage View**
+- GitHub plugin
+- NodeJS
+- Git plugin (usually already installed)
+- GitHub Branch Source plugin (usually already installed)
+- Pipeline (usually already installed)
 
 #### Optional but Recommended
 
-- **Blue Ocean** (modern UI for pipelines)
-- **AnsiColor** (colored console output)
+- Pipeline: Stage View
+- AnsiColor (colored console output)
 
 ### 3. Install Plugins
 
@@ -123,69 +121,71 @@ Our pipeline uses the NodeJS plugin with the `tools` directive. The plugin will 
 1. Go to **Manage Jenkins** > **Global Tool Configuration**
 2. Scroll to the **NodeJS** section
 3. Click **Add NodeJS**
-   - **Name**: `NodeJS 20` (this exact name must match the Jenkinsfile)
-   - **Install automatically**: ✅ Check this box
-   - **Version**: Select `NodeJS 20.x` from the dropdown (or the latest 20.x LTS version)
+   - Name: `NodeJS 22.2.0` (this exact name must match the Jenkinsfile)
+   - Install automatically: ✅ Check this box
+   - Version: Select `NodeJS 22.2.0` from the dropdown (or the latest 20.x LTS version)
    - Leave other options as default
 4. Click **Save**
 
-**Important**: The name `NodeJS 20` must match exactly what's in your Jenkinsfile's `tools` section:
+**Important**: The name `NodeJS 22.2.0` must match exactly what's in your Jenkinsfile's `tools` section:
 
 ```groovy
 tools {
-    nodejs 'NodeJS 20'
+    nodejs 'NodeJS 22.2.0'
 }
 ```
 
-**Note**: 
+#### Note
+
 - The Jenkins plugin will download and cache Node.js automatically on the first build. No manual Node.js installation is required on the EC2 instance.
-- We use Node.js 20 to meet Vite's requirement of Node.js 20.19+ or 22.12+.
+- We use Node.js 22.2.0 to meet Vite's requirement of Node.js 20.19+ or 22.12+.
+- The AWS CLI is already installed in the instance thanks to the user_data script, no plugin is needed, it is going to be accessed through 'sh' in the pipeline.
 
-### 2. Configure System Settings
+### 2. Configure System Settings (Optional - For Private Repositories)
 
-1. Go to **Manage Jenkins** > **System**
-2. Configure the following:
+**For Public Repositories**: No system configuration is needed. Skip this section and proceed to [Create the Pipeline Job](#create-the-pipeline-job).
 
-#### GitHub Servers Section
+**For Private Repositories**: If your GitHub repository is private, you'll need to add credentials that Jenkins can use to clone the repository.
 
-- **GitHub Server**: Should have a default GitHub server
-- If not present, add one:
-  - Click **Add GitHub Server**
-  - **Name**: `GitHub`
-  - **API URL**: `https://api.github.com` (default)
-  - Leave credentials blank for now (we'll use webhook)
+#### Adding GitHub Credentials
 
-Click **Save** at the bottom.
+1. Go to **Manage Jenkins** > **Credentials**
+2. Click on **(global)** domain
+3. Click **Add Credentials** (System -> Global Credentials)
+4. Configure based on your authentication method:
 
----
+##### Option A - Username and Password (Personal Access Token)
 
-## Create GitHub Personal Access Token
+This is the recommended method for HTTPS URLs.
 
-You'll need a GitHub Personal Access Token (PAT) to allow Jenkins to access your repository.
+- **Kind**: Username with password
+- **Scope**: Global
+- **Username**: Your GitHub username
+- **Password**: Your GitHub Personal Access Token (PAT)
+  - To create a PAT: GitHub > Settings > Developer settings > Personal access tokens > Generate new token
+  - Required scope: `repo` (full control of private repositories)
+- **ID**: `github-credentials` (or any meaningful identifier)
+- **Description**: `GitHub Private Repository Access`
 
-### 1. Generate Token on GitHub
+Click **Create**.
 
-1. Go to GitHub.com and log in
-2. Click your **profile picture** (top right) > **Settings**
-3. Scroll down and click **Developer settings** (bottom left)
-4. Click **Personal access tokens** > **Tokens (classic)**
-5. Click **Generate new token** > **Generate new token (classic)**
+##### Option B - SSH Private Key
 
-### 2. Configure Token
+This method is for SSH URLs (e.g., `git@github.com:user/repo.git`).
 
-- **Note**: `Jenkins CI/CD Access`
-- **Expiration**: Choose appropriate expiration (e.g., 90 days)
-- **Select scopes**:
-  - ✅ `repo` (all sub-options)
-  - ✅ `admin:repo_hook` (all sub-options)
+- **Kind**: SSH Username with private key
+- **Scope**: Global
+- **ID**: `github-ssh-key` (or any meaningful identifier)
+- **Description**: `GitHub SSH Access`
+- **Username**: `git`
+- **Private Key**: Choose one:
+  - **Enter directly**: Paste your SSH private key
+  - **From a file on Jenkins controller**: Path to your private key file
+- **Passphrase**: If your private key has a passphrase, enter it here
 
-Click **Generate token**
+Click **Create**.
 
-### 3. Save Token
-
-**IMPORTANT**: Copy the token immediately. You won't be able to see it again!
-
-Save it securely (e.g., password manager).
+**Note**: Your Jenkins EC2 instance or Jenkins user must have the corresponding public key added to your GitHub account (Settings > SSH and GPG keys).
 
 ---
 
@@ -194,7 +194,7 @@ Save it securely (e.g., password manager).
 ### 1. Create New Item
 
 1. From Jenkins Dashboard, click **New Item** (top left)
-2. **Enter an item name**: `deploy-vite-app` (or your preferred name)
+2. Enter an item name: `deploy-vite-app` (or your preferred name)
 3. Select **Pipeline**
 4. Click **OK**
 
@@ -208,10 +208,10 @@ In the job configuration page:
 Automated deployment pipeline for Vite application to AWS via S3 and SSM
 ```
 
-#### GitHub Project (Optional)
+#### GitHub Project
 
 - ✅ Check **GitHub project**
-- **Project url**: `https://github.com/<YOUR_USERNAME>/<YOUR_REPO>/`
+- Project url: `https://github.com/<YOUR_USERNAME>/<YOUR_REPO>/`
 
 ### 3. Build Triggers
 
@@ -226,18 +226,18 @@ This section determines when the pipeline runs.
 
 #### Alternative Options (choose based on your needs)
 
-**Option A - Poll SCM** (not recommended for production):
+### Option A - Poll SCM (not recommended for production)
 
 - ✅ Check **Poll SCM**
-- **Schedule**: `H/5 * * * *` (polls every 5 minutes)
+- Schedule: `H/5 * * * *` (polls every 5 minutes)
 - *Note*: Uses more resources, delays are longer
 
-**Option B - Build periodically** (for scheduled builds):
+### Option B - Build periodically (for scheduled builds)
 
 - ✅ Check **Build periodically**
-- **Schedule**: Use cron syntax (e.g., `H 2 * * *` for daily at 2 AM)
+- Schedule: Use cron syntax (e.g., `H 2 * * *` for daily at 2 AM)
 
-**Option C - Manual only**:
+### Option C - Manual only
 
 - Leave all triggers unchecked
 - Builds only when manually triggered
@@ -248,9 +248,9 @@ This section determines when the pipeline runs.
 
 You can configure these if needed:
 
-- **Display Name**: Custom display name for the job
-- **Quiet period**: Seconds to wait before starting build (default: 5)
-- **Retry Count**: Number of times to retry checkout (default: 0)
+- Display Name: Custom display name for the job
+- Quiet period: Seconds to wait before starting build (default: 5)
+- Retry Count: Number of times to retry checkout (default: 0)
 
 ### 5. Pipeline Configuration
 
@@ -272,29 +272,87 @@ The script should start with:
 pipeline {
     agent any
     
+    tools {
+        nodejs 'NodeJS 22.2.0'
+    }
+    
     environment {
         REGION = 'us-east-1'
-        BUCKET = 'jenkins-pipeline-emmanuel-engineering-com'
+        BUCKET = 'your-bucket-name'
         ...
 ```
 
-**Important**: Update these environment variables to match your setup:
+**CRITICAL - Update These Values Before Running**:
+
+You must update the following sections in the Jenkinsfile:
+
+##### 1. GitHub Repository URL and Credentials (Line ~31-35)
+
+**For Public Repositories**:
+
+```groovy
+stage('Checkout') {
+    steps {
+        git branch: 'main',
+            url: 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
+    }
+}
+```
+
+**For Private Repositories**:
+
+If your repository is private, you need to add the `credentialsId` parameter with the ID of the credentials you created earlier:
+
+```groovy
+stage('Checkout') {
+    steps {
+        git branch: 'main',
+            credentialsId: 'github-credentials',  // Use the ID you created in Manage Credentials
+            url: 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
+    }
+}
+```
+
+Replace:
+
+- `YOUR_USERNAME` with your GitHub username
+- `YOUR_REPO` with your repository name
+- `github-credentials` with the actual credential ID if you used a different one
+
+##### 2. Environment Variables (Lines ~9-14)
+
+You can get these values from your Terraform outputs after deployment:
+
+```bash
+# Run this in your terraform/root directory
+terraform output
+```
+
+Update these environment variables in the Jenkinsfile:
 
 ```groovy
 environment {
-    REGION = 'us-east-1'                                    // Your AWS region
-    BUCKET = 'jenkins-pipeline-emmanuel-engineering-com'    // Your S3 bucket name
-    KEY_PREFIX = 'myapp/releases'                           // S3 prefix for artifacts
-    APP_TAG_KEY = 'Role'                                    // Tag key for target instances
-    APP_TAG_VAL = 'App'                                     // Tag value for target instances
+    REGION = 'us-east-1'                    // Your AWS region (from Terraform)
+    BUCKET = 'your-s3-bucket-name'          // From: terraform output s3_bucket_name
+    KEY_PREFIX = 'myapp/releases'           // S3 prefix for artifacts (keep or customize)
+    APP_TAG_KEY = 'Role'                    // Tag key for target instances (from Terraform)
+    APP_TAG_VAL = 'App'                     // Tag value for target instances (from Terraform)
 }
 ```
+
+**How to get the values**:
+
+- **REGION**: The AWS region where you deployed (e.g., `us-east-1`)
+- **BUCKET**: Run `terraform output s3-bucket-name` in the `terraform/root` directory
+- **APP_TAG_KEY** and **APP_TAG_VAL**: These should match the tags on your EC2 instances (check your Terraform configuration in `terraform/root/main.tf` or AWS Console)
+
+**Alternative**: If you prefer, you can add a Terraform output that provides the complete environment block. See the troubleshooting section for details.
 
 #### Pipeline Options
 
 Below the script area, you may see:
 
-- ✅ **Use Groovy Sandbox** (should be checked)
+- Use Groovy Sandbox (should be checked)
   - Allows the script to run with restricted permissions (safer)
   - Uncheck only if you need unrestricted access and understand the risks
 
@@ -353,19 +411,19 @@ http://<JENKINS_EC2_PUBLIC_IP>:8080/github-webhook/
 
 Select one of:
 
-**Option A - Just the push event** (Recommended)
+### Option A - Just the push event (Recommended)
 
 - ⚪ Select **Just the push event**
 - Pipeline triggers on every push to the repository
 
-**Option B - Let me select individual events**
+### Option B - Let me select individual events
 
 - ⚪ Select **Let me select individual events**
 - Check boxes:
   - ✅ **Pushes**
   - ✅ **Pull requests** (if you want to test PRs)
 
-**Option C - Send me everything**
+### Option C - Send me everything
 
 - Not recommended (too noisy)
 
@@ -385,7 +443,8 @@ After adding:
 2. You should see a green checkmark ✅ next to the webhook
 3. If you see a red ❌, click on the webhook to view the error details
 
-**Common Issues**:
+### Common Issues
+
 - Jenkins server not accessible from internet (check Security Group)
 - Incorrect URL (missing trailing slash)
 - Jenkins not running
@@ -409,11 +468,13 @@ After adding:
 
 1. Make a small change to your repository (e.g., update README)
 2. Commit and push to GitHub:
+
    ```bash
-   git add .
-   git commit -m "Test webhook trigger"
-   git push
+    git add .
+    git commit -m "Test webhook trigger"
+    git push
    ```
+
 3. Go to Jenkins Dashboard
 4. Within a few seconds, you should see a new build starting automatically
 
@@ -424,18 +485,55 @@ After adding:
 After a successful build:
 
 1. Check the Console Output for the deployment log
-2. Access your application via the ALB URL
+2. Access your application via the ALB URL or the Route 53 record URL
 3. Verify the new version is deployed
 
 ---
 
 ## Troubleshooting
 
+### Getting Terraform Output Values
+
+If you need to retrieve the values for your Jenkinsfile configuration:
+
+```bash
+# Navigate to your Terraform directory
+cd terraform/root
+
+# View all outputs
+terraform output
+
+# Get specific outputs
+terraform output s3-bucket-name
+terraform output jenkins-webhook-endpoint
+terraform output project-url
+```
+
+**Available Terraform Outputs**:
+
+- `s3-bucket-name`: Your S3 bucket name (use for `BUCKET` variable)
+- `jenkins-server`: Your Jenkins server URL
+- `jenkins-webhook-endpoint`: The webhook URL to use in GitHub
+- `project-url`: Your application's public URL
+- `alb-alb_dns_name`: ALB DNS name
+
+**For EC2 Instance Tags**: Check your `terraform/root/main.tf` file or run:
+
+```bash
+# From your local machine (with AWS CLI configured)
+aws ec2 describe-instances \
+  --region us-east-1 \
+  --filters "Name=tag:Name,Values=*app*" \
+  --query "Reservations[*].Instances[*].[InstanceId,Tags]" \
+  --output table
+```
+
 ### Jenkins Won't Start
 
 **Symptoms**: Can't access Jenkins web interface
 
 **Solutions**:
+
 ```bash
 # Check Jenkins status
 sudo systemctl status jenkins
@@ -453,14 +551,17 @@ java -version  # Should be Java 17
 ### Webhook Not Triggering Builds
 
 **Check Security Group**:
+
 - Ensure port 8080 is open to GitHub's webhook IPs
 - For testing, you can temporarily allow 0.0.0.0/0 (⚠️ not for production)
 
 **Check Jenkins GitHub Plugin**:
+
 1. Go to **Manage Jenkins** > **System Log**
 2. Look for webhook-related errors
 
 **Check GitHub Webhook Delivery**:
+
 1. Go to GitHub repository > Settings > Webhooks
 2. Click on your webhook
 3. Scroll to **Recent Deliveries**
@@ -475,7 +576,7 @@ java -version  # Should be Java 17
 
 1. **Check if NodeJS tool is configured in Jenkins**:
    - Go to **Manage Jenkins** > **Global Tool Configuration**
-   - Verify **NodeJS 20** is configured with auto-install enabled
+   - Verify **NodeJS 22.2.0** is configured with auto-install enabled
    - Ensure the name matches exactly what's in your Jenkinsfile
 
 2. **Check Jenkins Plugin Manager**:
@@ -509,6 +610,7 @@ java -version  # Should be Java 17
    - Check it's executable: `sudo chmod +x /opt/deploy/pull_and_switch.sh`
 
 **Debug Commands**:
+
 ```bash
 # From Jenkins EC2, test SSM access
 aws ssm describe-instance-information --region us-east-1
@@ -526,9 +628,11 @@ aws ssm send-command \
 **Issue**: AWS credentials or permissions
 
 **Solution**:
+
 - Verify Jenkins EC2 has IAM permissions to write to S3 bucket
 - Check bucket name is correct in pipeline environment variables
 - Test S3 access manually:
+
   ```bash
   sudo su - jenkins
   echo "test" > test.txt
@@ -540,13 +644,16 @@ aws ssm send-command \
 **Issue**: Git repository state issues
 
 **Solution**:
+
 - The pipeline has `cleanWs()` in the post section
 - If issues persist, you can manually clean:
+
+```bash
   ```bash
   sudo su - jenkins
   cd /var/lib/jenkins/workspace/deploy-vite-app
   git clean -fdx
-  ```
+```
 
 ---
 
@@ -560,6 +667,7 @@ Configure email notifications:
 2. Scroll to **E-mail Notification**
 3. Configure SMTP server
 4. Add to pipeline post section:
+
    ```groovy
    post {
        success {
