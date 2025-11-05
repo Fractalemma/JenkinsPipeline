@@ -10,7 +10,7 @@ This module creates IAM roles and instance profiles for both Jenkins and App EC2
 - **Permissions**:
   - SSM access for debugging (can be accessed via Session Manager)
   - Send SSM Run Commands to App EC2 instances (filtered by tags)
-  - Full S3 access to the artifacts bucket (upload/download artifacts)
+  - Full (almost full) S3 access to the artifacts bucket (upload/download artifacts)
 
 ### App EC2 Role
 

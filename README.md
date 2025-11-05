@@ -17,7 +17,7 @@ Automated deployment pipeline that builds a Vite application and deploys it to A
 - **App EC2 (ASG)**: Receives SSM commands, pulls artifacts from S3, deploys to Nginx
 - **ALB**: Routes traffic to App instances
 - **S3**: Stores build artifacts
-- **IAM Roles**: Jenkins (full S3 + SSM send), App (S3 read + SSM receive)
+- **IAM Roles**: Jenkins (almost full S3 + SSM send), App (S3 read + SSM receive)
 
 ## Pipeline Stages
 
